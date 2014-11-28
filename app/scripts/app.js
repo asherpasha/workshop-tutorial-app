@@ -1,11 +1,12 @@
 (function(window, $, undefined) {
   'use strict';
+	
+  window.alert('This alert came form app.js');
 
-  console.log('Hello, workshop tutorial app!');
 
-  var appContext = $('[data-app-name="workshop-tutorial-app"]');
+  /*var appContext = $('[data-app-name="workshop-tutorial-app"]');
 
-  /* Generate Agave API docs */
+   Generate Agave API docs 
   window.addEventListener('Agave::ready', function() {
     var Agave, help, helpItem, helpDetail, methods, methodDetail;
 
@@ -54,5 +55,6 @@
     info.append('<p>' + Agave.api.info.title + ': ' + Agave.api.info.description + '</p>');
     info.append('<p><a href="mailto:' + Agave.api.info.contact + '">Contact</a> | <a href="' + Agave.api.info.license + '">License</a> | <a href="' + Agave.api.info.license + '">Terms of use</a></p>');
   });
+  */
 
 })(window, jQuery);
