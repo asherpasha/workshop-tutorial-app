@@ -1,5 +1,6 @@
+/*global _*/
 /*jshint camelcase: false*/
-(function(window, $, undefined) {
+(function(window, $, _, undefined) {
   'use strict';
 
   console.log('Hello, workshop tutorial!');
@@ -10,34 +11,61 @@
   window.addEventListener('Agave::ready', function() {
     var Agave = window.Agave;
 
-    Agave.api.profiles.me({}, function(resp) {
-      /*
-       * The parsed JSON response from Agave is in `resp.obj`.
-       * Other data available in resp include headers, request
-       * metadata, and the raw response data string. The Agave
-       * Profile object is the `result` attribute of the Agave
-       * response object.
-       */
-      var profile = resp.obj.result;
-      console.log(JSON.stringify(profile, null, 2));
+    var templates = {
+      resultTable: _.template('<table class="table"><thead><tr><th>Related Locus</th><th>Direction</th><th>Score</th></tr></thead><tbody><% _.each(result, function(r) { %><tr><td><%= r.related_entity %> <button name="gene-report" data-locus="<%= r.related_entity %>" class="btn btn-link btn-sm"><i class="fa fa-book"></i><span class="sr-only">Get Gene Report</span></button></td><td><%= r.relationships[0].direction %></td><td><%= _.values(r.relationships[0].scores[0])[0] %></td></tr><% }) %></tbody></table>'),
+      geneReport: _.template('<div class="modal fade"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" data-dismiss="modal" class="close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button><h4>Gene Report: <%= locus %></h4></div><div class="modal-body"><% _.each(properties, function(prop) { %><h3><%= prop.type.replace("_"," ") %></h3><p><%= prop.value %></p><% }) %></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">Close</button></div></div></div></div>')
+    };
 
-      $('.profile-name', appContext).text(profile.username);
+    var showResults = function( json ) {
 
-      var vcard = $('.vcard', appContext);
-      vcard.find('.fn').text(profile.full_name);
-      vcard.find('.email').text(profile.email);
-      vcard.find('.tel-primary').text(profile.phone || 'not specified');
-      vcard.find('.tel-secondary').text(profile.mobile_phone || 'not specified');
+      // show error message for invalid object
+      if ( ! ( json && json.obj ) ) {
+        $( '.results', appContext ).html( '<div class="alert alert-danger">Invalid response!</div>' );
+        return;
+      }
 
-      /* do some date parsing */
-      var parsedDate = profile.create_time.replace(
-        /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
-        '$1-$2-$3T$4:$5:$6'
-      );
-      vcard.find('.note').text(new Date(parsedDate).toLocaleString());
+      $( '.results', appContext ).html( templates.resultTable( json.obj ) );
 
-      vcard.removeClass('hide');
+      $( 'button[name=gene-report]', appContext ).on('click', function( e ) {
+        e.preventDefault();
+
+        var locus = $(this).attr('data-locus');
+
+        var query = {
+          locus: locus
+        };
+
+        Agave.api.adama.search(
+          {'namespace': 'aip', 'service': 'locus_gene_report_v0.1', 'queryParams': query},
+          function(search) {
+            var html = templates.geneReport(search.obj.result[0]);
+            $(html).appendTo('body').modal();
+          }
+        );
+      });
+
+      $( '.results table', appContext ).dataTable();
+    };
+
+
+    $( 'form', appContext ).on('submit', function(e) {
+      e.preventDefault();
+      // showResults( $(this).serializeArray() );
+
+      // STEP 2.1
+      // showResults( this.locus.value );
+
+      // STEP 2.2
+      var query = {
+        locus: this.locus.value,
+        relationship_type: this.relationship_type.value,
+        threshold: this.threshold.value
+      };
+      Agave.api.adama.search({
+        'namespace': 'aip', 'service': 'atted_coexpressed_by_locus_v0.1', 'queryParams': query
+      }, showResults);
     });
+
   });
 
-})(window, jQuery);
+})(window, jQuery, _);

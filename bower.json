@@ -1,5 +1,8 @@
 {
   "name": "workshop-tutorial",
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "datatables": "~1.10.4",
+    "underscore": "~1.7.0"
+  }
 }
